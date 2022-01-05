@@ -1,6 +1,10 @@
 #Files
 desing.py
 sismosMundiales.csv
+.env
+
+
+
 
 #Folders
 /.vscode
