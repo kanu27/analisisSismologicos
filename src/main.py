@@ -1,17 +1,19 @@
 import pandas as pd
 import numpy as np
-import matplotlib
+import matplotlib.pyplot as plt
 import os
 import http.client
 import json
 
+#Year,Month,Day,Time,Lat,Lon,Depth,Mag,Region,Timestamp
+#2011,06,14,23:57:56,29.33,130.99,16,3,"RYUKYU ISLANDS, JAPAN",1308095876
 
 def getData():
     df = pd.read_csv(
         'src/data/sismosMundiales.csv',
         sep=",",
         )
-    return df.head()
+    return df
 
 def getCountry(df):
     lati = df['Lat'].values[0]
@@ -24,12 +26,11 @@ def getCountry(df):
     res = conn.getresponse()
     data = str(res.read().decode("utf-8")).replace("n","")
     data = json.loads(data.replace("  ",""))"""
-    df['Country'] = df['Country'].replace(np.nan, data["results"][6]["formatted_address"])
+    df['Country'] = df['Country'].replace(np.nan, data["results"][-1]["formatted_address"])
     print(df)    
     return df
 
 def modifyData():
-    global dfData
     dfData = getData()
     dfData['GeneralTime'] = pd.to_datetime(dfData['Timestamp'], unit='s')
     dfData.set_index('Timestamp', inplace = True)
@@ -38,16 +39,70 @@ def modifyData():
     dfData = pd.concat([dfData, name], axis=1)
     dfData.drop(['Year', 'Month', 'Day', 'Time', 'Region'], axis = 'columns', inplace=True)
     dfData.replace(to_replace=[None], value=np.nan, inplace=True)
-    dfData.apply(lambda row: getCountry(dfData[dfData['Country'].isnull()]),axis=1)
-    print("__________________________________________________________")
-    print(dfData)
+    #dfData = dfData.apply(lambda row: getCountry(dfData[dfData['Country'].isnull()]),axis=1) 
+    return dfData
+
+def countriesHighMagnitude(dfData):
+    """Paises con sismos de magnitud mayor  o igual a 8"""
+    fig = plt.figure()
+    ax = fig.add_subplot(2, 1, 1)    
+    df = dfData.sort_values("Mag", ascending=True)
+    dft = df.tail(20)
+
+    ax.barh(dft["Location"], dft["Mag"], color=['#21FF02','#02FFE8','#023CFF','#FF027D','#3D4E58','#32B65C','#B63240','#7102FF','#2802FF','#FF02F3','#02BEFF','#FF0202','#0284FF','#FF7502','#02FF4F','#FFB602','#02FF94','#FFDD02','#8CFF02','#DDFF02'])
+    plt.title("Los 20 sismos mas grandes entre 1970 y 2021", fontsize=16)
+    plt.ylabel('Pais', fontsize=12)
+    plt.xlabel('Magnitud Richter', fontsize=12)
+
+    ax1 = fig.add_subplot(2, 1, 2)
+    ax1.barh(dft["Location"], dft["Depth"],color=['#21FF02','#02FFE8','#023CFF','#FF027D','#3D4E58','#32B65C','#B63240','#7102FF','#2802FF','#FF02F3','#02BEFF','#FF0202','#0284FF','#FF7502','#02FF4F','#FFB602','#02FF94','#FFDD02','#8CFF02','#DDFF02'])
+    plt.title("Profundidad de los sismos", fontsize=16)
+    plt.ylabel('Pais', fontsize=12)
+    plt.xlabel('Profundidad a nivel del mar en kilometros', fontsize=12)
+
+def countriesHighDeph(dfData):
+    fig = plt.figure()
+    ax = fig.add_subplot(2, 1, 1)    
+    df = dfData.sort_values("Depth", ascending=True)
+    dft = df.tail(20)
+    ax.barh(dft["Location"], dft["Depth"], color=['#21FF02','#02FFE8','#023CFF','#FF027D','#3D4E58','#32B65C','#B63240','#7102FF','#2802FF','#FF02F3','#02BEFF','#FF0202','#0284FF','#FF7502','#02FF4F','#FFB602','#02FF94','#FFDD02','#8CFF02','#DDFF02'])
+    plt.title("Los 20 sismos mas profundos entre 1970 y 2021", fontsize=16)
+    plt.ylabel('Pais', fontsize=12)
+    plt.xlabel('Profundidad a nivel del mar en kilometros', fontsize=12)
+
+    ax1 = fig.add_subplot(2, 1, 2)
+    ax1.barh(dft["Location"], dft["Mag"],color=['#21FF02','#02FFE8','#023CFF','#FF027D','#3D4E58','#32B65C','#B63240','#7102FF','#2802FF','#FF02F3','#02BEFF','#FF0202','#0284FF','#FF7502','#02FF4F','#FFB602','#02FF94','#FFDD02','#8CFF02','#DDFF02'])
+    plt.title("Profundidad de los sismos", fontsize=16)
+    plt.ylabel('Pais', fontsize=12)
+    plt.xlabel('Magnitud Richter', fontsize=12)
 
 
 
 
+
+def returnPreviousEarthquakes():
+    pass
+
+
+
+
+def countriesPriorToTheEarthquake(dfData):
+    """Paises que presentaron sismos 90 dias antes del evento en chile"""
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    datasChile = dfData[dfData["Location"].str.contains("CHILE")]
+    print(datasChile)
     
+
+
+
+
 if __name__ == "__main__":
-    modifyData()
+   dfData = modifyData()
+   #countriesHighMagnitude(dfData)
+   #countriesHighDeph(dfData)
+   
+   
+   countriesPriorToTheEarthquake(dfData)
 
-
-
+   plt.show()
