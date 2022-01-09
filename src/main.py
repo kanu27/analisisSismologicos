@@ -9,6 +9,7 @@ import json
 #2011,06,14,23:57:56,29.33,130.99,16,3,"RYUKYU ISLANDS, JAPAN",1308095876
 
 def getData():
+    global countCsv
     df = pd.read_csv(
         'src/data/sismosMundiales.csv',
         sep=",",
@@ -17,23 +18,30 @@ def getData():
 
 def getCountry(lat,lon,ct):
     respon = "City"
-    if type(ct) == float:
-        lati = lat
-        long = lon
-        conn = http.client.HTTPSConnection("maps.googleapis.com")
-        payload = ''
-        headers = {}
-        conn.request("GET", "/maps/api/geocode/json?latlng={},{}&key={}".format(lati,long,os.getenv('googleKeys')), payload, headers)
-        res = conn.getresponse()
-        data = str(res.read().decode("utf-8")).replace("n","")
-        data = json.loads(data.replace("  ",""))
-        respon = str(data["results"][-1]["formatted_address"]).upper()
-    else:
-        respon = ct
+    try:
+        if type(ct) == float:
+            lati = lat
+            long = lon            
+            conn = http.client.HTTPSConnection("maps.googleapis.com")
+            payload = ''
+            headers = {}
+            conn.request("GET", "/maps/api/geocode/json?latlng={},{}&key={}".format(lati,long,os.getenv('googleKeys')), payload, headers)
+            res = conn.getresponse()
+            data = str(res.read().decode("utf-8")).replace("n","")
+            data = json.loads(data.replace("  ",""))
+            respon = str(data["results"][-1]["formatted_address"]).upper()
+        else:
+            respon = ct
+    except OSError as error:
+        print(lati,long)
+        print(error)
+    except Exception as error:
+        print(lati,long)
+        print(error)
     return respon
 
-
 def modifyData():
+    countCsv = 0
     dfData = getData()
     dfData['GeneralTime'] = pd.to_datetime(dfData['Timestamp'], unit='s')
     dfData.set_index('Timestamp', inplace = True)
@@ -43,6 +51,7 @@ def modifyData():
     dfData.drop(['Year', 'Month', 'Day', 'Time', 'Region'], axis = 'columns', inplace=True)
     dfData.replace(to_replace=[None], value=np.nan, inplace=True)
     dfData["Country"] = dfData.apply(lambda row: getCountry(row["Lat"],row["Lon"],row["Country"]),axis=1)    
+    dfData.to_csv("src/data/sismosMundialesModificated.csv")
     return dfData
 
 def countriesHighMagnitude(dfData):
@@ -115,7 +124,7 @@ if __name__ == "__main__":
    dfData = modifyData()
    #countriesHighMagnitude(dfData)
    #countriesHighDeph(dfData)
-   contrastWithChile(dfData)
+   #contrastWithChile(dfData)
    
    #countriesPriorToTheEarthquake(dfData)
 
