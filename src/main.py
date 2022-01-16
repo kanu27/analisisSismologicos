@@ -6,55 +6,38 @@ import http.client
 import json
 import datetime
 
-#Year,Month,Day,Time,Lat,Lon,Depth,Mag,Region,Timestamp
-#2011,06,14,23:57:56,29.33,130.99,16,3,"RYUKYU ISLANDS, JAPAN",1308095876
 
-def getData():    
+def getData():
+    """
+    Recopilacion de la informacion:
+    1- src/data/sismosMundiales.csv
+        data recopilada mediante scraping y formulada en csv
+    2- src/data/sismosMundialesModificated.csv
+        data ya obtenida y transformada y lista para la ejecucion
+    """
     df = pd.read_csv(
         'src/data/sismosMundiales.csv',
         sep=",",
         )
     return df
 
-def getCountry(lat,lon,ct):
-    respon = "City"
-    try:
-        if type(ct) == float:
-            lati = lat
-            long = lon            
-            conn = http.client.HTTPSConnection("maps.googleapis.com")
-            payload = ''
-            headers = {}
-            conn.request("GET", "/maps/api/geocode/json?latlng={},{}&key={}".format(lati,long,os.getenv('googleKeys')), payload, headers)
-            res = conn.getresponse()
-            data = str(res.read().decode("utf-8")).replace("n","")
-            data = json.loads(data.replace("  ",""))
-            respon = str(data["results"][-1]["formatted_address"]).upper()
-        else:
-            respon = ct
-    except OSError as error:
-        print(lati,long)
-        print(error)
-    except Exception as error:
-        print(lati,long)
-        print(error)
-    return respon
-
 def modifyData():
+    """
+    data medoficada para una correcta ejcucion
+    """
     dfData = getData()
     dfData['GeneralTime'] = pd.to_datetime(dfData['Timestamp'], unit='s')
     dfData.set_index('Timestamp', inplace = True)
-    #name = dfData["Region"].str.split(',',expand=True)
-    #name.columns = ['Location', 'Country']
-    #dfData = pd.concat([dfData, name], axis=1)
     dfData.drop(['Year', 'Month', 'Day', 'Time'], axis = 'columns', inplace=True)
     dfData.replace(to_replace=[None], value=np.nan, inplace=True)
-    #dfData["Country"] = dfData.apply(lambda row: getCountry(row["Lat"],row["Lon"],row["Country"]),axis=1)    
-    #dfData.to_csv("src/data/sismosMundialesModificated.csv")
     return dfData
 
 def countriesHighMagnitude(dfData):
-    """Paises con sismos de magnitud mayor  o igual a 8"""
+    """
+    Los 20 sismos mas grandes dentro de 1970 y 2021
+    1- grafico representando la magnitud y las regiones de los hechos
+    2- grafico las mismas regiones y la profundidad de cada sismo
+    """
     fig = plt.figure()
     ax = fig.add_subplot(2, 1, 1)    
     df = dfData.sort_values("Mag", ascending=True)
@@ -62,32 +45,42 @@ def countriesHighMagnitude(dfData):
 
     ax.barh(dft["Region"], dft["Mag"], color=['#21FF02','#02FFE8','#023CFF','#FF027D','#3D4E58','#32B65C','#B63240','#7102FF','#2802FF','#FF02F3','#02BEFF','#FF0202','#0284FF','#FF7502','#02FF4F','#FFB602','#02FF94','#FFDD02','#8CFF02','#DDFF02'])
     plt.title("Los 20 sismos mas grandes entre 1970 y 2021", fontsize=16)
-    plt.ylabel('Pais', fontsize=12)
+    plt.ylabel('Region', fontsize=12)
     plt.xlabel('Magnitud Richter', fontsize=12)
 
     ax1 = fig.add_subplot(2, 1, 2)
     ax1.barh(dft["Region"], dft["Depth"],color=['#21FF02','#02FFE8','#023CFF','#FF027D','#3D4E58','#32B65C','#B63240','#7102FF','#2802FF','#FF02F3','#02BEFF','#FF0202','#0284FF','#FF7502','#02FF4F','#FFB602','#02FF94','#FFDD02','#8CFF02','#DDFF02'])
     plt.title("Profundidad de los sismos", fontsize=16)
-    plt.ylabel('Pais', fontsize=12)
-    plt.xlabel('Profundidad a nivel del mar en kilometros', fontsize=12)
+    plt.ylabel('Region', fontsize=12)
+    plt.xlabel('Profundidad en kilometros bajo nivel del mar', fontsize=12)
 
 def countriesHighDeph(dfData):
+    """
+    Los 20 sismos mas profundos dentro de 1970 y 2021
+    1- grafico representando la profundidad y las regiones de los hechos
+    2- grafico las mismas regiones y su magnitud de cada uno
+    """
     fig = plt.figure()
     ax = fig.add_subplot(2, 1, 1)    
     df = dfData.sort_values("Depth", ascending=True)
     dft = df.tail(20)
     ax.barh(dft["Region"], dft["Depth"], color=['#21FF02','#02FFE8','#023CFF','#FF027D','#3D4E58','#32B65C','#B63240','#7102FF','#2802FF','#FF02F3','#02BEFF','#FF0202','#0284FF','#FF7502','#02FF4F','#FFB602','#02FF94','#FFDD02','#8CFF02','#DDFF02'])
     plt.title("Los 20 sismos mas profundos entre 1970 y 2021", fontsize=16)
-    plt.ylabel('Pais', fontsize=12)
-    plt.xlabel('Profundidad a nivel del mar en kilometros', fontsize=12)
+    plt.ylabel('Region', fontsize=12)
+    plt.xlabel('Profundidad en kilometros bajo nivel del mar', fontsize=12)
 
     ax1 = fig.add_subplot(2, 1, 2)
     ax1.barh(dft["Region"], dft["Mag"],color=['#21FF02','#02FFE8','#023CFF','#FF027D','#3D4E58','#32B65C','#B63240','#7102FF','#2802FF','#FF02F3','#02BEFF','#FF0202','#0284FF','#FF7502','#02FF4F','#FFB602','#02FF94','#FFDD02','#8CFF02','#DDFF02'])
     plt.title("Profundidad de los sismos", fontsize=16)
-    plt.ylabel('Pais', fontsize=12)
+    plt.ylabel('Region', fontsize=12)
     plt.xlabel('Magnitud Richter', fontsize=12)
 
 def contrastWithChile(dfData):
+    """
+    validacion de dicha informacion si a meonor profundidad mayor es el sismo 
+    transfiriendolo a la realidad chilena.
+    presentando sismos mayores a 6 y presentando su informacion  y una media.
+    """
     datasChile = dfData[dfData["Region"].str.contains("CHILE")]
     datasChileHigh6 = datasChile[datasChile["Mag"] >= 6.0]
     dft = datasChileHigh6.sort_values("Mag", ascending=True)
@@ -99,9 +92,15 @@ def contrastWithChile(dfData):
     ax1.plot(mean["Depth"])
     plt.title("sismos en chile mayores a 6 vs su profundidad y su media", fontsize=16)
     plt.xlabel('Magnitud Richter', fontsize=12)
-    plt.ylabel('Profundidad a nivel del mar en kilometros', fontsize=12)
+    plt.ylabel('Profundidad en kilometros bajo nivel del mar', fontsize=12)
 
 def countries90Days(dfData,GeneralTime):
+    """
+    funcion lambda obteniendo sismos chilenos mayores a 7 y buscando sismos mundiales 120 dias previos al 
+    acontecimiento de magnitud mayor o igual a 7.
+    retornando un listado de 10 regiones mas comunes en cada evento, filtrado por fechas, magnitud superior
+    a 6 y profundidad menor o igual a 150(maximo de la media representado en el grafico anterior).
+    """
     GeneralTime = datetime.datetime.strptime(GeneralTime, "%Y-%m-%d %H:%M:%S")
 
     days90Before = GeneralTime - datetime.timedelta(days=120)
@@ -153,7 +152,7 @@ def countries90Days(dfData,GeneralTime):
         GeneralTimeStr += str(GeneralTime.second)
     df = dfData.loc[(dfData['GeneralTime'] >= days90BeforeStr) & (dfData['GeneralTime'] < GeneralTimeStr)]
     df = df[df['Depth']<= 150]
-    df = df[df['Mag']>= 5]
+    df = df[df['Mag']>= 6]
     df1 = df
     df1["Count"] = 1
     df1["region"] = df["Region"]    
@@ -168,11 +167,15 @@ def countries90Days(dfData,GeneralTime):
     return regionList
 
 def porcentajeValor(pct):
+    """
+    funcion que retorna porcentaje de cada region
+    """
     return "{:.1f}%".format(pct) 
 
 def countriesPriorToTheEarthquake(dfData):
-    """Paises que presentaron sismos 120 dias antes del evento en chile"""
-   
+    """
+    Paises que presentaron sismos 120 dias antes del evento en chile
+    """   
     datasChile = dfData[dfData["Region"].str.contains("CHILE")]
     datasChileHigh7 = datasChile[datasChile["Mag"] >= 7.0]
     dft = datasChileHigh7.sort_values("Mag", ascending=True)
@@ -187,7 +190,6 @@ def countriesPriorToTheEarthquake(dfData):
     df = df.sort_values("Count", ascending=True)
     df["Region"] = df.index
     df = df.tail(10)
-
     fig3, ax3 = plt.subplots()
     wedges, texts, autotexts = ax3.pie(df["Count"],
                                       autopct=lambda pct: porcentajeValor(pct),
@@ -202,20 +204,16 @@ def countriesPriorToTheEarthquake(dfData):
     plt.setp(autotexts, size=8, weight="bold")
     ax3.set_title("Regiones sismicas antes de un terremoto en chile")
 
-
-
-
-#https://www.uv.es/vcoll/Curso_de_Introducci%C3%B3n_a_R_files/figure-html/unnamed-chunk-269-1.png
-#https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.text.html
-
 if __name__ == "__main__":
+    #dfData = modifyData()
     dfData = pd.read_csv(
         'src/data/sismosMundialesModificated.csv',
         sep=",",
         )
+    
     countriesHighMagnitude(dfData)
-    countriesHighDeph(dfData)
-    contrastWithChile(dfData)
-    countriesPriorToTheEarthquake(dfData)
+    #countriesHighDeph(dfData)
+    #contrastWithChile(dfData)
+    #countriesPriorToTheEarthquake(dfData)
 
     plt.show()
