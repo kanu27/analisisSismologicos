@@ -1,9 +1,6 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-import http.client
-import json
 import datetime
 
 
@@ -12,8 +9,6 @@ def getData():
     Recopilacion de la informacion:
     1- src/data/sismosMundiales.csv
         data recopilada mediante scraping y formulada en csv
-    2- src/data/sismosMundialesModificated.csv
-        data ya obtenida y transformada y lista para la ejecucion
     """
     df = pd.read_csv(
         'src/data/sismosMundiales.csv',
@@ -71,7 +66,7 @@ def countriesHighDeph(dfData):
 
     ax1 = fig.add_subplot(2, 1, 2)
     ax1.barh(dft["Region"], dft["Mag"],color=['#21FF02','#02FFE8','#023CFF','#FF027D','#3D4E58','#32B65C','#B63240','#7102FF','#2802FF','#FF02F3','#02BEFF','#FF0202','#0284FF','#FF7502','#02FF4F','#FFB602','#02FF94','#FFDD02','#8CFF02','#DDFF02'])
-    plt.title("Profundidad de los sismos", fontsize=16)
+    plt.title("Magnitud de los sismos", fontsize=16)
     plt.ylabel('Region', fontsize=12)
     plt.xlabel('Magnitud Richter', fontsize=12)
 
@@ -88,7 +83,7 @@ def contrastWithChile(dfData):
     
     fig1 = plt.figure()
     ax1 = fig1.add_subplot(1, 1, 1)
-    ax1.scatter(dft["Mag"],dft["Depth"], marker="o")
+    ax1.scatter(dft["Mag"],dft["Depth"], marker="o", color='g')
     ax1.plot(mean["Depth"])
     plt.title("sismos en chile mayores a 6 vs su profundidad y su media", fontsize=16)
     plt.xlabel('Magnitud Richter', fontsize=12)
@@ -101,8 +96,6 @@ def countries90Days(dfData,GeneralTime):
     retornando un listado de 10 regiones mas comunes en cada evento, filtrado por fechas, magnitud superior
     a 6 y profundidad menor o igual a 150(maximo de la media representado en el grafico anterior).
     """
-    GeneralTime = datetime.datetime.strptime(GeneralTime, "%Y-%m-%d %H:%M:%S")
-
     days90Before = GeneralTime - datetime.timedelta(days=120)
     days90BeforeStr = str()
     days90BeforeStr = str(days90Before.year)+"-"    
@@ -160,7 +153,7 @@ def countries90Days(dfData,GeneralTime):
     df1 = df1.sort_values("Count", ascending=True)
     df1 = df1.tail(10)
     df1["Region"] = df1.index
-    df1.drop(['Timestamp', 'Lat', 'Lon','Depth','Mag'],axis = 'columns', inplace=True)
+    df1.drop(['Lat', 'Lon','Depth','Mag'],axis = 'columns', inplace=True)
     regionList = list()
     for data in df1['Region']:
         regionList.append(data)
@@ -205,15 +198,10 @@ def countriesPriorToTheEarthquake(dfData):
     ax3.set_title("Regiones sismicas antes de un terremoto en chile")
 
 if __name__ == "__main__":
-    #dfData = modifyData()
-    dfData = pd.read_csv(
-        'src/data/sismosMundialesModificated.csv',
-        sep=",",
-        )
-    
+    dfData = modifyData()    
     countriesHighMagnitude(dfData)
-    #countriesHighDeph(dfData)
-    #contrastWithChile(dfData)
-    #countriesPriorToTheEarthquake(dfData)
+    countriesHighDeph(dfData)
+    contrastWithChile(dfData)
+    countriesPriorToTheEarthquake(dfData)
 
     plt.show()
