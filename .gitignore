@@ -1,5 +1,4 @@
 #Files
-desing.py
 sismosMundiales.csv
 .env
 sismosMundialesModificated.csv
@@ -8,5 +7,5 @@ sismosMundialesModificated.csv
 
 
 #Folders
-/.vscode
-/venv
+.vscode
+venv
