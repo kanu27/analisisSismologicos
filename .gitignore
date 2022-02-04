@@ -1,11 +1,12 @@
 #Files
 sismosMundiales.csv
 .env
-sismosMundialesModificated.csv
-
-
+IEB_export.csv
+*log
 
 
 #Folders
 .vscode
 venv
+__pycache__
+log

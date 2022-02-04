@@ -6,7 +6,7 @@ author information:
     email: kanu.ponce@gmail.com
 """
 import psycopg2
-from services.log import Log
+from helper.services.log import Log
 
 class PostgresClass():
     def __init__(self,
@@ -167,12 +167,10 @@ class PostgresClass():
             cur.execute(query)
             updatedRows = cur.rowcount
             return updatedRows
-        except psycopg2.DatabaseError as e:
-            Log("ERROR BD: " + str(e),"error","PostgresClass","openConection")
-            Log.console()
-        except Exception as e:
-            Log("ERROR UNKNOWN: " + str(e),"error","PostgresClass","openConection")
-            Log.console()
+        except psycopg2.DatabaseError as e:            
+            Log.console(Log("ERROR BD: " + str(e),"error","PostgresClass","openConection"))
+        except Exception as e:            
+            Log.console(Log("ERROR UNKNOWN: " + str(e),"error","PostgresClass","openConection"))
         finally:
             if self.conn is not None:
                 cur.close()
