@@ -1,9 +1,7 @@
 #Files
-sismosMundiales.csv
 .env
-IEB_export.csv
 *log
-
+*.csv
 
 #Folders
 .vscode
